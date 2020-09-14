@@ -1,15 +1,13 @@
 package com.sigit.demo.controller;
 
-import com.sigit.demo.common.UserNotFoundException;
+import com.sigit.demo.exception.UserNotFoundException;
 import com.sigit.demo.entity.User;
 import com.sigit.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Date 07/09/20
@@ -25,7 +23,7 @@ public class UserController {
     private UserRepository userRepository;
 
     @GetMapping("")
-    public List<User> retrieveAllStudents() {
+    public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
@@ -46,14 +44,14 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<User> update(@PathVariable(value = "id") long id, @RequestBody User userDetails) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("user id-" + id));
 
-        user.setId(userDetails.getId());
-        user.setName(userDetails.getName());
-        user.setCountry(userDetails.getCountry());
-        final User updatedUser = userRepository.save(user);
-        return ResponseEntity.ok(updatedUser);
+        return userRepository.findById(id)
+                .map(record -> {
+                    record.setName(userDetails.getName());
+                    record.setCountry(userDetails.getCountry());
+                    User updated = userRepository.save(userDetails);
+                    return ResponseEntity.ok().body(updated);
+                }).orElseThrow(() -> new UserNotFoundException("user id-" + id));
     }
 
     @DeleteMapping("/{id}")
